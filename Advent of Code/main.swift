@@ -10,30 +10,50 @@ func main() {
     let fileUrl = URL(fileURLWithPath: "./aoc-input")
     guard let inputString = try? String(contentsOf: fileUrl, encoding: .utf8) else { fatalError("Invalid input") }
     
-    let lines = inputString.components(separatedBy: "\n")
+    var lines = inputString.components(separatedBy: "\n")
         .filter { !$0.isEmpty }
-    
-    // Sample algorithm
-    var scoreboard = [String: Int]()
+
+    var template = lines.removeFirst()
+
+    var rules = [String: String]()
+
+    var chars = Set<Character>()
+
     lines.forEach { line in
-        let (name, score) = parseLine(line)
-        scoreboard[name] = score
+        let ar = line.components(separatedBy: " -> ")
+        rules[ar[0]] = ar[1]
+        chars.insert(Character(ar[1]))
     }
-    scoreboard
-        .sorted { lhs, rhs in
-            lhs.value > rhs.value
-        }
-        .forEach { name, score in
-            print("\(name) \(score) pts")
-        }
+
+    for _ in 0 ..< 10 {
+        template = process(template: template, rules: rules)
+    }
+
+    var charCounts = [Character: Int]()
+    for char in chars {
+        charCounts[char] = template.filter { $0 == char }.count
+    }
+
+    let result = charCounts.values.max()! - charCounts.values.min()!
+    print(result)
 }
 
-func parseLine(_ line: String) -> (name: String, score: Int) {
-    let helper = RegexHelper(pattern: #"([\-\w]*)\s(\d+)"#)
-    let result = helper.parse(line)
-    let name = result[0]
-    let score = Int(result[1])!
-    return (name: name, score: score)
+func process(template: String, rules: [String: String]) -> String {
+    let templateArray = Array(template).map(String.init)
+
+    var newTemplate = [String]()
+
+    for i in 0 ..< templateArray.count - 1 {
+        let pair = "\(templateArray[i])\(templateArray[i+1])"
+        if let letter = rules[pair] {
+            newTemplate.append("\(templateArray[i])\(letter)")
+        } else {
+            newTemplate.append("\(templateArray[i])")
+        }
+    }
+    newTemplate.append(templateArray.last!)
+
+    return newTemplate.joined(separator: "")
 }
 
 main()
